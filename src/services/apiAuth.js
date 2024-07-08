@@ -46,6 +46,7 @@ export async function login({ email, password }) {
 }
 
 export async function getCurrentUser() {
+  //Supabase stoes the user to the loacalStorage, so if we open the website after some time, the session will be still logged in
   const { data: session } = await supabase.auth.getSession();
   if (!session.session) return null;
 

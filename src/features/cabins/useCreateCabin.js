@@ -9,6 +9,7 @@ export default function useCreateCabin() {
     mutationFn: createEditCabin,
     onSuccess: () => {
       toast.success("New Cabin has been successfully created");
+      //This is to refresh the data as soon as the mutation is done
       queryClient.invalidateQueries({
         queryKey: ["cabin"],
       });
