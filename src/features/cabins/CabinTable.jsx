@@ -1,51 +1,67 @@
-import styled from "styled-components";
+import { useSearchParams } from "react-router-dom";
 import useCabin from "./useCabin";
 import Spinner from "../../ui/Spinner";
 import CabinRow from "./CabinRow";
-
-const Table = styled.div`
-  border: 1px solid var(--color-grey-200);
-  width: 100%;
-  font-size: 1.4rem;
-  background-color: var(--color-grey-0);
-  border-radius: 7px;
-  overflow: hidden;
-`;
-
-const TableHeader = styled.header`
-  display: grid;
-  grid-template-columns: 0.6fr 1.8fr 2.2fr 1fr 1fr 1fr;
-  column-gap: 2.4rem;
-  align-items: center;
-
-  background-color: var(--color-grey-50);
-  border-bottom: 1px solid var(--color-grey-100);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  font-weight: 600;
-  color: var(--color-grey-600);
-  padding: 1.6rem 2.4rem;
-`;
+import Table from "../../ui/Table";
+import Menus from "../../ui/Menus";
+import Empty from "../../ui/Empty";
 
 function CabinTable() {
   const { isPending, cabins } = useCabin();
+  const [searchParams] = useSearchParams();
 
   if (isPending) return <Spinner />;
+  if (!cabins.length) return <Empty resource="bookings" />;
+
+  //Filter
+  const filterValue = searchParams.get("discount") || "all";
+
+  let filteredCabins;
+
+  switch (filterValue) {
+    case "no-discount":
+      filteredCabins = cabins.filter((cabin) => cabin.discount === 0);
+      break;
+    case "with-discount":
+      filteredCabins = cabins.filter((cabin) => cabin.discount > 0);
+      break;
+    default:
+      filteredCabins = cabins;
+      break;
+  }
+
+  //Sort
+  const sortByValue = searchParams.get("sortBy") || "";
+
+  let sortedCabins;
+
+  const [field, direction] = sortByValue.split("-");
+  const modifier = direction === "asc" ? 1 : -1;
+  sortedCabins = filteredCabins.sort((a, b) => {
+    if (typeof a[field] === "string") {
+      return modifier * a[field].localeCompare(b[field]);
+    } else {
+      return (a[field] - b[field]) * modifier;
+    }
+  });
 
   return (
-    <Table role="table">
-      <TableHeader role="row">
-        <div></div>
-        <div>Cabin</div>
-        <div>Capacity</div>
-        <div>Price</div>
-        <div>Discount</div>
-        <div></div>
-      </TableHeader>
-      {cabins.map((cabin) => (
-        <CabinRow cabin={cabin} key={cabin.id} />
-      ))}
-    </Table>
+    <Menus>
+      <Table columns="0.6fr 1.8fr 2.2fr 1fr 1fr 1fr">
+        <Table.Header>
+          <div></div>
+          <div>Cabin</div>
+          <div>Capacity</div>
+          <div>Price</div>
+          <div>Discount</div>
+          <div></div>
+        </Table.Header>
+        <Table.Body
+          data={sortedCabins}
+          render={(cabin) => <CabinRow cabin={cabin} key={cabin.id} />}
+        ></Table.Body>
+      </Table>
+    </Menus>
   );
 }
 
